@@ -349,7 +349,9 @@
         const emailRes = await fetch(`${API}/api/boomlify/create`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ apiKey: boomlifyKey })
+          // On passe "boomlify.net" comme domaine souhaité
+          // Boomlify utilisera ce domaine si disponible sur ton compte
+          body: JSON.stringify({ apiKey: boomlifyKey, domain: 'boomlify.net' })
         });
         const emailJson = await emailRes.json();
         if (!emailRes.ok) throw new Error(`Boomlify : ${emailJson.error || emailRes.status}`);
@@ -478,4 +480,3 @@
 
 </body>
 </html>
-
