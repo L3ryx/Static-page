@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ════════════════════════════════════════════════
-// PROXY 1 : Créer un email Boomlify
+// PROXY 1 : Créer un email Boomlify se terminant par .net
 // POST /api/boomlify/create
 // Body: { apiKey: "..." }
 // ════════════════════════════════════════════════
@@ -22,16 +22,40 @@ app.post('/api/boomlify/create', async (req, res) => {
   if (!apiKey) return res.status(400).json({ error: 'apiKey manquant.' });
 
   try {
+    // 1. Récupérer la liste des domaines disponibles
+    const domainsRes = await fetch('https://v1.boomlify.com/api/v1/domains', {
+      headers: { 'X-API-Key': apiKey }
+    });
+    const domainsJson = await domainsRes.json();
+    if (!domainsRes.ok) return res.status(domainsRes.status).json({ error: domainsJson.message || `Boomlify domains ${domainsRes.status}` });
+
+    const domainsList = Array.isArray(domainsJson)
+      ? domainsJson
+      : (domainsJson.data || domainsJson.domains || []);
+
+    // 2. Filtrer pour ne garder que les domaines en .net
+    const netDomain = domainsList.find(d => (d.domain || d.name || '').endsWith('.net'));
+
+    if (!netDomain) {
+      return res.status(404).json({ error: 'Aucun domaine .net disponible sur ce compte Boomlify.' });
+    }
+
+    const domainId = netDomain.id || netDomain._id || netDomain.domain_id;
+    console.log(`Domaine .net sélectionné : ${netDomain.domain || netDomain.name}`);
+
+    // 3. Créer l'email sur ce domaine .net
     const r = await fetch('https://v1.boomlify.com/api/v1/emails/create?time=1day', {
       method: 'POST',
       headers: {
         'X-API-Key':    apiKey,
         'Content-Type': 'application/json'
-      }
+      },
+      body: JSON.stringify({ domain_id: domainId })
     });
     const data = await r.json();
     if (!r.ok) return res.status(r.status).json({ error: data.message || `Boomlify ${r.status}` });
     res.json(data);
+
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
