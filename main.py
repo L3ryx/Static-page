@@ -3,103 +3,79 @@ import random
 import string
 import time
 import requests
-import imaplib
-import email
 import re
 from flask import Flask, jsonify
 
 app = Flask(__name__)
 
-# Configuration via Variables d'Environnement sur Render
+# Récupère ta clé ZenRows depuis les variables d'environnement de Render
 ZENROWS_API_KEY = os.getenv("ZENROWS_API_KEY")
-EMAIL_USER = "l3ryx91220@outlook.fr"
-EMAIL_PASS = os.getenv("EMAIL_PASSWORD") # Utilise un "Mot de passe d'application" Microsoft
 
-def get_random_name():
-    first_names = ["Jean", "Marc", "Lucas", "Sophie", "Emma"]
-    last_names = ["Dupont", "Moreau", "Lefebvre", "Rousseau"]
-    return random.choice(first_names), random.choice(last_names)
+def gen_random(length=10):
+    """Génère une chaîne aléatoire pour les noms/passwords"""
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
-def generate_str(length=12):
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
-
-def zenrows_request(url, instructions):
+def zenrows_request(url, instructions=None):
+    """Effectue une requête via ZenRows avec rendu JS et instructions"""
     params = {
         'apikey': ZENROWS_API_KEY,
         'url': url,
         'js_render': 'true',
         'antibot': 'true',
         'premium_proxy': 'true',
-        'js_instructions': str(instructions).replace("'", '"')
     }
+    if instructions:
+        # Convertit la liste Python en chaîne JSON pour l'API
+        params['js_instructions'] = str(instructions).replace("'", '"')
+    
     return requests.get('https://api.zenrows.com/v1/', params=params)
 
 @app.route('/run')
-def run_script():
-    # --- PHASE 1 : Premier Site ---
-    url_1 = "TON_PREMIER_URL"
-    fn, ln = get_random_name()
-    
-    instructions_1 = [
-        {"fill": ["input[type='text']", generate_str(8)]}, # Username
-        {"click": "button.next"},
-        {"wait": 1000},
-        {"fill": ["input[type='password']", generate_str(15)]}, # Password
-        {"click": "button.next"},
-        {"wait": 1000},
-        {"evaluate": "document.querySelectorAll('select')[0].value = '10'"}, # Jour naissance
-        {"fill": ["input[name='firstname']", fn]},
-        {"fill": ["input[name='lastname']", ln]},
-        {"click": "#human-verification-btn"}, # Bypass manuel via clic
-        {"click": "button.cancel"} # Fermer fenêtres si présentes
-    ]
-    
-    res1 = zenrows_request(url_1, instructions_1)
-
-    # --- PHASE 2 : ScrapingBee via ZenRows ---
-    url_bee = "URL_SCRAPINGBEE"
-    instructions_bee = [
-        {"fill": ["input[type='email']", EMAIL_USER]},
-        {"fill": ["input[type='password']", generate_str(12)]},
-        {"click": ".captcha-solver-button"}, # Simulation du clic captcha
-        {"wait": 5000}
-    ]
-    
-    res2 = zenrows_request(url_bee, instructions_bee)
-
-    # --- PHASE 3 : Récupération du mail (Outlook) ---
-    # Attente que le mail arrive
-    time.sleep(30) 
-    api_key_found = "Non trouvée"
-    
+def run_automation():
     try:
-        mail = imaplib.IMAP4_SSL("outlook.office365.com")
-        mail.login(EMAIL_USER, EMAIL_PASS)
-        mail.select("inbox")
-        _, data = mail.search(None, '(FROM "ScrapingBee")')
-        mail_id = data[0].split()[-1]
-        _, obj = mail.fetch(mail_id, '(RFC822)')
+        # --- DONNÉES GÉNÉRÉES ---
+        user_rand = gen_random(8)
+        pass_rand = gen_random(14)
+        email_gen = f"{user_rand}@outlook.fr" # Format demandé
+        prenom = "Alex"
+        nom = "Robot"
+
+        # --- ÉTAPE 1 : INSCRIPTION SUR LE PREMIER SITE ---
+        url_site_1 = "https://signup.live.com/signup?cobrandid=ab0455a0-8d03-46b9-b18b-df2f57b9e44c&contextid=C9DA2F7DDBB5EE06&opid=3B395EE7C8B7708E&bk=1773527762&sru=https://login.live.com/oauth20_authorize.srf%3fclient_id%3d9199bf20-a13f-4107-85dc-02114787ef48%26cobrandid%3dab0455a0-8d03-46b9-b18b-df2f57b9e44c%26client_id%3d9199bf20-a13f-4107-85dc-02114787ef48%26cobrandid%3dab0455a0-8d03-46b9-b18b-df2f57b9e44c%26contextid%3dC9DA2F7DDBB5EE06%26opid%3d3B395EE7C8B7708E%26login_hint%3dM%2524EjB4nOOYPLX7zfPX338WCYnmGBdVVlgaGhkZOOSXluTk52frpRVJTLq86T0rAHCpEXk%26mkt%3dFR-FR%26lc%3d1036%26bk%3d1773527762%26uaid%3d1c652bf9561d1651b96e038267fa0c8d&lw=dob,flname,wld&uiflavor=web&fluent=2&client_id=00000000487A244A&lic=1&mkt=FR-FR&lc=1036&uaid=1c652bf9561d1651b96e038267fa0c8d"
         
-        # Extraction du lien avec Regex
-        body = obj[0][1].decode('utf-8')
-        links = re.findall(r'https://[\w\d./?=#-]+', body)
-        confirm_link = links[0]
+        # Note: Remplace les sélecteurs (ex: '#username') par les vrais IDs du site
+        instr_1 = [
+            {"fill": ["#username_field", user_rand]},
+            {"click": "#btn_next"},
+            {"wait": 1000},
+            {"fill": ["#password_field", pass_rand]},
+            {"click": "#btn_next"},
+            {"wait": 1000},
+            {"evaluate": "document.querySelectorAll('select')[0].value = '1990'"}, # Date naissance
+            {"fill": ["input[name='firstname']", prenom]},
+            {"fill": ["input[name='lastname']", nom]},
+            {"click": ".human-verification-button"}, # Bouton "Humain"
+            {"wait": 2000},
+            {"evaluate": "if(document.querySelector('.popup-close')){document.querySelector('.popup-close').click()}"} # Annule fenêtres
+        ]
+        
+        print("Lancement Phase 1...")
+        zenrows_request(url_site_1, instr_1)
 
-        # --- PHASE 4 : Clic sur le lien et lecture de la clé API ---
-        # On demande à ZenRows d'aller sur le lien et de nous rendre le texte de la page
-        res3 = zenrows_request(confirm_link, [{"wait": 2000}])
-        # On cherche la clé API dans le HTML (exemple format : 'spb-XXXX')
-        match = re.search(r'spb-[a-zA-Z0-9]+', res3.text)
-        if match:
-            api_key_found = match.group(0)
+        # --- ÉTAPE 2 : SCRAPINGBEE (CONNEXION/INSCRIPTION) ---
+        url_scrapingbee = "https://dashboard.scrapingbee.com/account/register"
+        
+        instr_bee = [
+            {"fill": ["input[type='email']", "l3ryx91220@outlook.fr"]},
+            {"fill": ["input[type='password']", pass_rand]},
+            {"click": "#solve-captcha-button"}, # Le bouton pour le captcha
+            {"wait": 5000}
+        ]
+        
+        print("Lancement Phase 2...")
+        zenrows_request(url_scrapingbee, instr_bee)
 
-    except Exception as e:
-        return f"Erreur Mail : {str(e)}"
+        # --- ÉTAPE 3 : NAVIGATION DANS LA BOITE MAIL ET CLIC LIEN ---
+        # Ici, on utilise ZenRows pour aller sur l'interface web du mail
+        url_mail_login = "URL_
 
-    return jsonify({
-        "status": "Terminé",
-        "scraped_api_key": api_key_found
-    })
-
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
