@@ -432,21 +432,40 @@
 
     // ════════════════════════════════════════════════
     // HELPER : appel ScraperBee
+    // ✅ ScraperBee utilise GET avec paramètres dans l'URL
+    //    js_scenario doit être sérialisé en JSON puis encodé
     // ════════════════════════════════════════════════
     async function scraperBee(scraperKey, url, instructions, wait = 2000) {
-      const res = await fetch('https://app.scrapingbee.com/api/v1/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          api_key: scraperKey, url, render_js: true, wait,
-          js_scenario: { instructions }
-        })
+      // Construire les paramètres en query string
+      const params = new URLSearchParams({
+        api_key:    scraperKey,
+        url:        url,
+        render_js:  'true',
+        wait:       String(wait),
+        // js_scenario doit être une chaîne JSON encodée
+        js_scenario: JSON.stringify({ instructions })
       });
+
+      const res = await fetch(`https://app.scrapingbee.com/api/v1/?${params.toString()}`, {
+        method: 'GET'
+      });
+
       if (!res.ok) {
         const e = await res.json().catch(() => ({}));
         throw new Error(`ScraperBee ${res.status} : ${e.message || 'erreur'}`);
       }
-      return res.json().catch(() => ({}));
+
+      // ScraperBee retourne du HTML par défaut
+      // Si js_return_value est présent il est dans les headers ou dans un JSON
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        return res.json().catch(() => ({}));
+      }
+
+      // Pour les appels avec evaluate(), la valeur retournée
+      // est dans le header "Spb-Evaluate-Result"
+      const evalResult = res.headers.get('Spb-Evaluate-Result');
+      return { js_return_value: evalResult || null };
     }
 
     // ════════════════════════════════════════════════
