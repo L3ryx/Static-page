@@ -1,51 +1,57 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Chargement...</title>
+<title>Server starting</title>
 
 <style>
 body{
-  font-family: Arial;
-  background:#0f172a;
-  color:white;
+  margin:0;
+  height:100vh;
   display:flex;
+  flex-direction:column;
   justify-content:center;
   align-items:center;
-  height:100vh;
-  flex-direction:column;
+  background:black;
+  color:white;
+  font-family:Arial, sans-serif;
+}
+
+h1{
+  margin-bottom:30px;
+  font-size:32px;
 }
 
 .loader{
-  border:6px solid #333;
-  border-top:6px solid #3b82f6;
-  border-radius:50%;
   width:60px;
   height:60px;
+  border:6px solid #333;
+  border-top:6px solid white;
+  border-radius:50%;
   animation:spin 1s linear infinite;
 }
 
 @keyframes spin{
-  0%{transform:rotate(0deg)}
-  100%{transform:rotate(360deg)}
+  0%{transform:rotate(0deg);}
+  100%{transform:rotate(360deg);}
 }
 </style>
 </head>
 
 <body>
 
-<h1>Le serveur démarre...</h1>
+<h1>The server starts</h1>
 <div class="loader"></div>
 
 <script>
 function checkServer(){
   fetch("https://www.finder-niche.com/")
-  .then(() => {
-    window.location.href = "https://www.finder-niche.com/";
-  })
-  .catch(() => {
-    setTimeout(checkServer, 3000);
-  });
+    .then(() => {
+      window.location.href = "https://www.finder-niche.com/";
+    })
+    .catch(() => {
+      setTimeout(checkServer, 3000);
+    });
 }
 
 checkServer();
