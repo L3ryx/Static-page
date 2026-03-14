@@ -15,7 +15,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ════════════════════════════════════════════════
 // PROXY 1 : Créer un email Boomlify se terminant par .net
 // POST /api/boomlify/create
-// Body: { apiKey: "...", domain: "boomlify.net" }
+// Body: { apiKey: "...", domain: "pindush.net" }
 // ════════════════════════════════════════════════
 app.post('/api/boomlify/create', async (req, res) => {
   const { apiKey, domain } = req.body;
@@ -23,7 +23,7 @@ app.post('/api/boomlify/create', async (req, res) => {
 
   try {
     // La doc Boomlify indique que le domaine se passe directement
-    // en query param : ?domain=boomlify.net
+    // en query param : ?domain=pindush.net
     // Si aucun domaine fourni, Boomlify en choisit un par défaut
     const domainParam = domain ? `&domain=${encodeURIComponent(domain)}` : '';
 
