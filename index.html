@@ -263,7 +263,7 @@
     </div>
 
     <div class="res-row">
-      <div class="res-label">🔑 Clé API finder-niche.com</div>
+      <div class="res-label">🔑 Clé API scrapingggbee.com</div>
       <div class="res-value highlight">
         <span id="res-apikey">—</span>
         <button class="copy-btn" onclick="copyVal('res-apikey','cp-apikey')">copier</button>
@@ -313,11 +313,12 @@
           Boomlify permet de <strong>lire les emails reçus</strong> via son API.
           On interroge l'endpoint en boucle jusqu'à recevoir l'email.
         </div>
+        <!-- ✅ ENDPOINT CORRIGÉ dans le bloc pédagogique -->
         <div class="code-block"><span class="cm">// Interroge Boomlify toutes les 3s jusqu'à réception</span>
 <span class="kw">for</span> (<span class="kw">let</span> i = <span class="val">0</span>; i < <span class="val">10</span>; i++) {
   <span class="kw">const</span> res = <span class="kw">await</span> <span class="fn">fetch</span>(
-    <span class="str">`https://v1.boomlify.com/api/emails/${inboxId}`</span>,
-    { headers: { <span class="str">'x-api-key'</span>: boomlifyKey } }
+    <span class="str">`https://v1.boomlify.com/api/v1/emails?limit=10`</span>,
+    { headers: { <span class="str">'X-API-Key'</span>: boomlifyKey, <span class="str">'X-Mailbox-Id'</span>: inboxId } }
   );
   <span class="kw">const</span> data   = <span class="kw">await</span> res.<span class="fn">json</span>();
   <span class="kw">const</span> emails = data.data || data.emails || [];
@@ -336,7 +337,7 @@
 <span class="kw">const</span> regex = /href=["'](https?:\/\/[^"']*(?:confirm|verify|activate|token)[^"']*)/i;
 <span class="kw">const</span> match = emailBody.<span class="fn">match</span>(regex);
 <span class="kw">const</span> link  = match ? match[<span class="val">1</span>] : <span class="kw">null</span>;
-<span class="cm">// → "https://finder-niche.com/confirm?token=abc123"</span></div>
+<span class="cm">// → "https://scrapingggbee.com/confirm?token=abc123"</span></div>
       </div>
 
       <div class="ped-section">
@@ -373,44 +374,33 @@
     // CONFIG
     // ════════════════════════════════════════════════
     const FIXED_PASSWORD = 'Test1234!';
-    const SITE_URL       = 'https://dashboard.scrapingbee.com/';
+    const SITE_URL       = 'https://dashboard.scrapingbee.com/account/login';
 
     // ════════════════════════════════════════════════
     // SCRIPT : remplir le formulaire d'inscription
-    // Injecté dans la page par ScraperBee
     // ════════════════════════════════════════════════
     const makeScriptFill = (email, password) => `
       (() => {
-        // Cherche un élément parmi plusieurs sélecteurs CSS possibles
         function findEl(selectors) {
           for (const s of selectors) {
             try { const el = document.querySelector(s); if (el) return el; } catch(e) {}
           }
           return null;
         }
-
-        // Remplit un input en déclenchant les événements React/Vue
         function fillInput(el, value) {
           const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
           setter.call(el, value);
           el.dispatchEvent(new Event('input',  { bubbles: true }));
           el.dispatchEvent(new Event('change', { bubbles: true }));
         }
-
-        // Trouver les champs
         const emailEl = findEl(['input[type="email"]','input[name="email"]','input[id="email"]','input[placeholder*="email" i]']);
         const pwdEl   = findEl(['input[type="password"]','input[name="password"]','input[id="password"]']);
-
         if (!emailEl || !pwdEl) return 'CHAMPS_NON_TROUVES';
-
         fillInput(emailEl, '${email}');
         fillInput(pwdEl,   '${password}');
-
-        // Chercher le bouton Register
         const allBtns = [...document.querySelectorAll('button')];
         const btn = allBtns.find(el => /register|sign up|créer|s.inscrire/i.test(el.textContent))
                  || document.querySelector('button[type="submit"]');
-
         if (btn) btn.click();
         return 'OK';
       })()
@@ -418,35 +408,27 @@
 
     // ════════════════════════════════════════════════
     // SCRIPT : récupérer la clé API dans la page
-    // Cherche dans inputs, spans, code, pre, div
     // ════════════════════════════════════════════════
     const SCRIPT_GET_KEY = `
       (() => {
-        // 1. Chercher par attribut name/id/placeholder contenant "api" ou "key"
         const inputs = [...document.querySelectorAll('input')];
         const byAttr = inputs.find(el => {
           const hint = (el.name + el.id + (el.placeholder||'')).toLowerCase();
           return hint.includes('api') || hint.includes('key') || hint.includes('token');
         });
         if (byAttr && byAttr.value && byAttr.value.length > 15) return byAttr.value;
-
-        // 2. Chercher par valeur longue alphanumérique dans les inputs
         const byVal = inputs.find(el =>
           el.value && el.value.length > 20 && /^[a-zA-Z0-9_\\-]+$/.test(el.value)
         );
         if (byVal) return byVal.value;
-
-        // 3. Chercher dans les éléments texte (code, span, pre, p)
         const textEls = [...document.querySelectorAll('code, pre, span, p, div, td, li')];
         const byText = textEls.find(el => {
           const t = el.textContent.trim();
-          // Une clé API : 20-100 chars, uniquement alphanumériques/tirets/underscores
           return t.length >= 20 && t.length <= 100 && /^[a-zA-Z0-9_\\-]+$/.test(t);
         });
         return byText ? byText.textContent.trim() : 'NON_TROUVEE';
       })()
     `;
-
 
     // ════════════════════════════════════════════════
     // HELPER : appel ScraperBee
@@ -469,13 +451,18 @@
 
     // ════════════════════════════════════════════════
     // HELPER : attendre un email dans Boomlify
+    // ✅ ENDPOINT CORRIGÉ : GET /api/v1/emails?limit=10
+    // ✅ HEADERS CORRIGÉS : X-API-Key + X-Mailbox-Id
     // ════════════════════════════════════════════════
     async function waitForEmail(inboxId, boomlifyKey, maxTries = 10) {
       for (let i = 0; i < maxTries; i++) {
         addLog('wait', `Attente de l'email… (${i + 1}/${maxTries})`);
 
-        const res  = await fetch(`https://v1.boomlify.com/api/emails/${inboxId}`, {
-          headers: { 'x-api-key': boomlifyKey }
+        const res = await fetch('https://v1.boomlify.com/api/v1/emails?limit=10', {
+          headers: {
+            'X-API-Key':    boomlifyKey,
+            'X-Mailbox-Id': inboxId
+          }
         });
         if (!res.ok) throw new Error(`Boomlify emails ${res.status}`);
 
@@ -496,7 +483,6 @@
     // HELPER : extraire le lien de confirmation
     // ════════════════════════════════════════════════
     function extractConfirmLink(emailBody) {
-      // Chercher un lien avec mots-clés de confirmation
       const r1 = /href=["'](https?:\/\/[^"'\s]*(?:confirm|verify|activate|token|validate)[^"'\s]*)/i;
       const m1 = (emailBody || '').match(r1);
       if (m1) return m1[1];
@@ -506,7 +492,6 @@
       const m2 = (emailBody || '').match(r2);
       return m2 ? m2[1] : null;
     }
-
 
     // ════════════════════════════════════════════════
     // PIPELINE PRINCIPAL
@@ -529,47 +514,36 @@
       try {
 
         // ── ÉTAPE 1 : Générer l'email ────────────────
+        // ✅ ENDPOINT CORRIGÉ : POST /api/v1/emails/create?time=1day
+        // ✅ HEADER CORRIGÉ   : X-API-Key (majuscule)
         setPipe(1, 'active');
-        addLog('wait', 'Récupération des domaines Boomlify…');
+        addLog('wait', 'Création de l\'adresse email via Boomlify…');
 
-        const domainsRes = await fetch('https://v1.boomlify.com/api/domains', {
-          headers: { 'x-api-key': boomlifyKey }
-        });
-        if (!domainsRes.ok) throw new Error(`Boomlify domains ${domainsRes.status} — vérifie ta clé.`);
-
-        const domainsData = await domainsRes.json();
-        const domainsList = Array.isArray(domainsData) ? domainsData : (domainsData.data || domainsData.domains || []);
-        if (!domainsList.length) throw new Error('Aucun domaine disponible sur Boomlify.');
-
-        const domain   = domainsList[0];
-        const domainId = domain.id || domain._id || domain.domain_id;
-        addLog('ok', `Domaine : <strong>${domain.domain || domain.name || domainId}</strong>`);
-
-        addLog('wait', 'Création de l\'adresse email…');
-        const emailRes = await fetch('https://v1.boomlify.com/api/email', {
+        const emailRes = await fetch('https://v1.boomlify.com/api/v1/emails/create?time=1day', {
           method: 'POST',
-          headers: { 'x-api-key': boomlifyKey, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ domain_id: domainId })
+          headers: {
+            'X-API-Key':    boomlifyKey,
+            'Content-Type': 'application/json'
+          }
         });
-        if (!emailRes.ok) throw new Error(`Boomlify email ${emailRes.status}`);
+        if (!emailRes.ok) throw new Error(`Boomlify ${emailRes.status} — vérifie ta clé.`);
 
         const emailObj  = await emailRes.json();
         const emailData = emailObj.data || emailObj;
-        generatedEmail  = emailData.email || emailData.address;
-        inboxId         = emailData.id || emailData._id || emailData.inbox_id;
+        generatedEmail  = emailData.email  || emailData.address  || emailData.mailbox;
+        inboxId         = emailData.id     || emailData._id      || emailData.inbox_id || emailData.mailbox_id;
 
         if (!generatedEmail) throw new Error('Email non retourné par Boomlify.');
         addLog('ok', `Email généré : <strong>${generatedEmail}</strong>`);
         setPipe(1, 'done');
 
 
-        // ── ÉTAPE 2 : S'inscrire sur finder-niche.com ─
+        // ── ÉTAPE 2 : S'inscrire ─────────────────────
         setPipe(2, 'active');
         addLog('wait', 'Ouverture du formulaire d\'inscription…');
 
         await scraperBee(scraperBeeKey, SITE_URL, [
           { wait: 2000 },
-          // Cliquer sur le bouton "Register" pour ouvrir le formulaire
           {
             evaluate: `
               (() => {
@@ -581,7 +555,6 @@
             `
           },
           { wait: 1500 },
-          // Remplir et soumettre le formulaire
           { evaluate: makeScriptFill(generatedEmail, FIXED_PASSWORD) },
           { wait: 3000 }
         ]);
@@ -590,15 +563,14 @@
         setPipe(2, 'done');
 
 
-        // ── ÉTAPE 3 : Lire l'email de confirmation ────
+        // ── ÉTAPE 3 : Lire l'email ───────────────────
         setPipe(3, 'active');
-
         const confirmEmail = await waitForEmail(inboxId, boomlifyKey);
         const emailBody    = confirmEmail.body_html || confirmEmail.body || confirmEmail.content || '';
         setPipe(3, 'done');
 
 
-        // ── ÉTAPE 4 : Extraire le lien + ScraperBee ───
+        // ── ÉTAPE 4 : Visiter le lien ────────────────
         setPipe(4, 'active');
         addLog('wait', 'Extraction du lien de confirmation…');
 
@@ -608,15 +580,8 @@
         addLog('ok', `Lien trouvé : <strong>${confirmLink.slice(0, 55)}…</strong>`);
         addLog('wait', 'ScraperBee visite le lien de confirmation…');
 
-        //
-        // ScraperBee visite le lien ET extrait la clé API
-        // directement sur la page de confirmation.
-        // On fait tout en un seul appel ScraperBee.
-        //
         const confirmData = await scraperBee(scraperBeeKey, confirmLink, [
-          // Attendre que la page se charge complètement
           { wait: 2000 },
-          // Extraire la clé API automatiquement
           { evaluate: SCRIPT_GET_KEY }
         ], 3000);
 
@@ -627,7 +592,6 @@
         setPipe(5, 'active');
         addLog('wait', 'Récupération de la clé API sur la page…');
 
-        // js_return_value contient la valeur retournée par le evaluate()
         const apiKey = confirmData?.js_return_value || null;
 
         if (!apiKey || apiKey === 'NON_TROUVEE' || apiKey === 'CHAMPS_NON_TROUVES') {
@@ -662,7 +626,6 @@
     function addLog(type, html) {
       const icons = { info:'○', ok:'✓', error:'✗', wait:'◎' };
       const box   = document.getElementById('log-box');
-      // Remplacer la dernière ligne "wait" pour ne pas spammer
       const lastLine = box.lastElementChild;
       if (type === 'wait' && lastLine?.classList.contains('wait')) lastLine.remove();
       const line = document.createElement('div');
