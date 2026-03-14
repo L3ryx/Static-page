@@ -22,7 +22,7 @@ app.post('/api/boomlify/create', async (req, res) => {
     // ScraperBee navigue sur boomlify.com et :
     // 1. Attend que la page charge et affiche un email
     // 2. Cherche le bouton/select pour changer de domaine vers pindush.net
-    // 3. Sélectionne pindush.net et récupère l'adresse générée
+    // 3. Sélectionne dev.pindush.net et récupère l'adresse générée
     const params = new URLSearchParams({
       api_key:     scraperBeeKey,
       url:         'https://boomlify.com/',
@@ -45,24 +45,24 @@ app.post('/api/boomlify/create', async (req, res) => {
                   const selects = [...document.querySelectorAll('select')];
                   for (const sel of selects) {
                     const opts = [...sel.options];
-                    const pindushOpt = opts.find(o =>
-                      o.value.includes('pindush') || o.text.includes('pindush')
+                    const dev.pindushOpt = opts.find(o =>
+                      o.value.includes('dev.pindush') || o.text.includes('dev.pindush')
                     );
                     if (pindushOpt) {
-                      sel.value = pindushOpt.value;
+                      sel.value = dev.pindushOpt.value;
                       sel.dispatchEvent(new Event('change', { bubbles: true }));
                       return 'select_found';
                     }
                   }
 
-                  // Essayer les boutons/liens contenant "pindush"
+                  // Essayer les boutons/liens contenant "dev.pindush"
                   const allEls = [...document.querySelectorAll('button, a, li, span, div')];
-                  const pindushEl = allEls.find(el =>
-                    el.textContent.includes('pindush.net') ||
-                    el.getAttribute('data-domain')?.includes('pindush')
+                  const dev.pindushEl = allEls.find(el =>
+                    el.textContent.includes('@dev.pindush.net') ||
+                    el.getAttribute('data-domain')?.includes('dev.pindush')
                   );
-                  if (pindushEl) {
-                    pindushEl.click();
+                  if (dev.pindushEl) {
+                    dev.pindushEl.click();
                     return 'element_clicked';
                   }
 
